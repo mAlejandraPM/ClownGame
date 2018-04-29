@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C4433046209575D50074E506 /* Levels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4433045209575D50074E506 /* Levels.swift */; };
 		C4846AC9209269900063E924 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4846AC8209269900063E924 /* AppDelegate.swift */; };
 		C4846ACB209269900063E924 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4846ACA209269900063E924 /* ViewController.swift */; };
 		C4846AD0209269900063E924 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C4846ACF209269900063E924 /* Assets.xcassets */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C4433045209575D50074E506 /* Levels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Levels.swift; sourceTree = "<group>"; };
 		C4846AC5209269900063E924 /* FinalProject.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FinalProject.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C4846AC8209269900063E924 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C4846ACA209269900063E924 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -65,6 +67,7 @@
 				C4846AE2209381BC0063E924 /* images */,
 				C4846AD4209269900063E924 /* Info.plist */,
 				C4846ADA209271260063E924 /* MainMenu.swift */,
+				C4433045209575D50074E506 /* Levels.swift */,
 				C4846ADE2092A7F40063E924 /* Game.swift */,
 			);
 			path = FinalProject;
@@ -142,6 +145,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C4433046209575D50074E506 /* Levels.swift in Sources */,
 				C4846ACB209269900063E924 /* ViewController.swift in Sources */,
 				C4846ADB209271260063E924 /* MainMenu.swift in Sources */,
 				C4846AC9209269900063E924 /* AppDelegate.swift in Sources */,

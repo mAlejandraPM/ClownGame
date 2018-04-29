@@ -19,16 +19,20 @@ class GameController: UIViewController {
     var actionView: GameView
     var currentProjectiles: [TravelingObject]
     var player: TravelingObject
+    var gameMaxX: Int
+    var gameMaxY: Int
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         game = Game()
-        actionView = GameView()
+        actionView = GameView(frame: CGRect(x:0,y:0,width:0,height:0), enemies: game.currentEnemies, projectiles: [])
+        actionView.game = self.game
         currentProjectiles = []
-        player = TravelingObject()
+        player = TravelingObject(pX: 0, pY: 0, vX: 0, vY: 0)
         game.level = 3
         controls = MotionControls()
         gameLoop = Thread()
-        
+        gameMaxX = 0 // needed because bounds & frame cannot be accessed in the secondary thread
+        gameMaxY = 0
         
         // set the background image
         let imageName: String
@@ -53,7 +57,6 @@ class GameController: UIViewController {
         
         setLayouts()
         
-        actionView.enemies = game.currentEnemies
         actionView.playerO = self.player
         
     }
@@ -68,12 +71,25 @@ class GameController: UIViewController {
         gameLoop.start()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        // center the player to initial position
+        player.currentX = Double(gameMaxX) / 2 - Double(gameMaxX) / 10  // subtraction used to center
+        player.currentY = Double(gameMaxY) - Double(gameMaxY) / 8
+    }
+    
     
     /* Updates the logic components of that represent the state of the game */
     func updateGameState(){
+        var dtime: Date = Date()
         while(true){
-            player.currentX = 350 / 2
-            player.currentY = 500 - 50
+            let timePassed: Double =  0.0 - dtime.timeIntervalSince(Date())
+            for e in game.currentEnemies {
+                e.currentX = e.currentX + Double(e.vX) * timePassed
+                e.currentY = e.currentY + Double(e.vY) * timePassed
+            }
+            
+            // update time to now
+            dtime = Date()
             
             if game.level == 1000 {
                 Thread.exit()
@@ -85,7 +101,12 @@ class GameController: UIViewController {
     
     
     @objc func updateGameDisplay(){
-        print("updating game display")
+        // This will update set the max values for moving objects
+        // needed b/c frame for background is initalized to 0,0,0,0 and set after view did load
+        gameMaxX = Int(actionView.frame.maxX)
+        gameMaxY = Int(actionView.frame.maxY)
+        
+        // calls layout of "moving" views
         actionView.setNeedsLayout()
     }
     
@@ -118,18 +139,36 @@ class GameController: UIViewController {
 /* The view that contains all of the moving pieces of the game,
  the targets, the player's character, and the projectiles */
 class GameView: UIView {
-    var enemies: [TravelingObject]
+    var enemyViews: [UIImageView]
+    var enemyFrames: [CGRect]
     var playerO: TravelingObject
     var player: UIImageView
-    var projectiles: [TravelingObject]
+    var projectiles: [UIImageView]
+    var game: Game
     
-    override init(frame: CGRect) {
-        enemies = []
-        playerO = TravelingObject()
+
+    init(frame: CGRect, enemies:[TravelingObject], projectiles: [TravelingObject]) {
+        self.enemyViews = []
+        self.enemyFrames = []
+        self.projectiles = []
         player = UIImageView()
-        player.image = UIImage(named: "images/person.png")
-        projectiles = []
+        playerO = TravelingObject(pX: 0, pY: 0, vX: 0, vY: 0)
+        game = Game()
         super.init(frame: frame)
+        
+        for e in game.currentEnemies {
+            // create a view with the clown
+            let eView: UIImageView = UIImageView()
+            print("\(e.currentY, e.currentX)")
+            eView.image = UIImage(named: "images/clown.png")
+            self.enemyViews.append(eView)
+            addSubview(eView)
+        }
+        
+        
+        player.image = UIImage(named: "images/person.png")
+        
+        
         addSubview(player)
     }
     
@@ -138,13 +177,11 @@ class GameView: UIView {
     }
     
     override func layoutSubviews() {
-        print("CLOWN FACES")
-       /* for e in enemies {
-            // create a view with the clown
-            let eView: UIImageView = UIImageView(frame: CGRect(x: CGFloat(e.currentX), y: CGFloat(e.currentY), width: bounds.maxX / 7, height: bounds.maxX / 8))
-            eView.image = UIImage(named: "images/clown.png")
-            addSubview(eView)
-        }*/
+        for (e, v) in zip(game.currentEnemies, enemyViews) {
+            // override the frame with one indicating new position
+            let eFrame: CGRect = CGRect(x: CGFloat(e.currentX), y: CGFloat(e.currentY), width: bounds.maxX / 7, height: bounds.maxX / 8)
+            v.frame = eFrame
+        }
         
         /*for p in projectiles {
             // create a view with the pie
@@ -154,54 +191,42 @@ class GameView: UIView {
         }*/
         
         // render the player's character
-        //player.frame = CGRect(x: CGFloat(playerO.currentX - 25), y: CGFloat(playerO.currentY - 25, width: bounds.maxX / 7, height: bounds.maxX / 8)
-        
-       // player.frame = CGRect(x: CGFloat(318), y: CGFloat(530), width: 5, height: 5)
-        
-        player.frame = CGRect(x: CGFloat(playerO.currentX), y: CGFloat(playerO.currentY), width: 70, height: 70)
-        
-        print(playerO.currentX)
-       print(playerO.currentY)
-        print(frame.maxX)
-        print(frame.maxY)
-        
-        
+        player.frame = CGRect(x: CGFloat(playerO.currentX), y: CGFloat(playerO.currentY), width: frame.maxX / 5, height: frame.maxY / 9)
         
     }
 }
 
-
+/* Represents a the game state */
 class Game: NSObject, Codable {
     var level: Int
     var score: Int
-    var lastDeployed: Int // the last clown deployed on the level
     var currentEnemies: [TravelingObject]
  
     override init() {
         level = 1
         score = 0
-        lastDeployed = 0
-        currentEnemies = []
+        currentEnemies = Levels.level1Enemies
         super.init()
     }
 }
 
 
+/* Represents object that can move in the game */
 class TravelingObject: NSObject, Codable {
-    var startX: Int
-    var startY: Int
-    var speed: Int
-    var currentX:Int
-    var currentY: Int
+    var startX: Double
+    var startY: Double
+    var vX: Int
+    var vY: Int
+    var currentX:Double
+    var currentY: Double
     
-    // TODO change this to take all params
-    override init() {
-        startX = 0
-        startY = 0
-        speed = 0
-        currentX = 0
-        currentY = 0
-        
+    init(pX: Double, pY: Double, vX: Int, vY: Int) {
+        startX = pX
+        startY = pY
+        self.vX = vX
+        self.vY = vY
+        currentX = pX
+        currentY = pY
     }
 }
 
