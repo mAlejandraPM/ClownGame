@@ -84,6 +84,9 @@ class ProgressView: UIView {
     
     override init(frame: CGRect) {
         score = UILabel()
+        score.text = "1200"
+        score.textColor = UIColor.yellow
+        score.textAlignment = .center
         lives = LivesView()
         super.init(frame: frame)
         
@@ -94,12 +97,12 @@ class ProgressView: UIView {
         addSubview(lives)
         
         let views:[String : UIView] = ["score": score, "lives": lives]
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-[score]-|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-[lives]-|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-[score]-[lives]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[score]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[lives]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[lives][score]|", options: [], metrics: nil, views: views))
         
-        addConstraint(NSLayoutConstraint(item: score, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: lives, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: score, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: lives, attribute: NSLayoutAttribute.height, multiplier: 1, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: lives, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.width, multiplier: 0.70, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: score, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.width, multiplier: 0.25, constant: 0.0))
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -121,11 +124,6 @@ class LivesView: UIView {
         life3 = UIImageView()
         life4 = UIImageView()
         
-        /*life1 = UIImageView(image: UIImage(named: ""))
-        life2 = UIImageView(image: UIImage(named: ""))
-        life3 = UIImageView(image: UIImage(named: ""))
-        life4 = UIImageView(image: UIImage(named: ""))*/
-        
         super.init(frame: frame)
         
         life1.translatesAutoresizingMaskIntoConstraints = false
@@ -139,20 +137,26 @@ class LivesView: UIView {
         addSubview(life4)
         
         let views:[String : UIView] = ["life1": life1, "life2": life2,"life3": life3, "life4": life4]
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|-[life1]-[life2]-[life3]-[life4]-|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-[life1]-|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-[life2]-|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-[life3]-|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|-[life4]-|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[life1][life2][life3][life4]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[life1]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[life2]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[life3]|", options: [], metrics: nil, views: views))
+        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[life4]|", options: [], metrics: nil, views: views))
         
-        addConstraint(NSLayoutConstraint(item: life1, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life2, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: life2, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life3, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: life3, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life4, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life1, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.width, multiplier: 0.25, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life2, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.width, multiplier: 0.25, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life3, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.width, multiplier: 0.25, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life4, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.width, multiplier: 0.25, constant: 0.0))
         
-        /*life1.image = UIImage(named: "images/popcorn.png")
+        addConstraint(NSLayoutConstraint(item: life1, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life1, attribute: NSLayoutAttribute.height, multiplier: 0.50, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life2, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life2, attribute: NSLayoutAttribute.height, multiplier: 0.50, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life3, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life3, attribute: NSLayoutAttribute.height, multiplier: 0.50, constant: 0.0))
+        addConstraint(NSLayoutConstraint(item: life4, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: life4, attribute: NSLayoutAttribute.height, multiplier: 0.50, constant: 0.0))
+        
+        life1.image = UIImage(named: "images/popcorn.png")
         life2.image = UIImage(named: "images/popcorn.png")
         life3.image = UIImage(named: "images/popcorn.png")
-        life4.image = UIImage(named: "images/popcorn.png")*/
+        life4.image = UIImage(named: "images/popcorn.png")
     }
     
     required init?(coder aDecoder: NSCoder) {

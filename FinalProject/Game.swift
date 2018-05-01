@@ -252,8 +252,13 @@ class GameController: UIViewController {
         // sets the layout of the actionview to entirely overlap the image view
         background.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[action]|", options: [], metrics: nil, views: views))
         background.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[action]|", options: [], metrics: nil, views: views))
+        
+        view.addConstraint(NSLayoutConstraint(item: progress, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: background, attribute: NSLayoutAttribute.height, multiplier: 0.3, constant: 0.0))
+        view.addConstraint(NSLayoutConstraint(item: controls, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: background, attribute: NSLayoutAttribute.height, multiplier: 0.1, constant: 0.0))
+        
     }
     
+   
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
