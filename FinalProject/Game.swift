@@ -11,6 +11,7 @@ import UIKit
 
 class GameController: UIViewController {
     var controls: MotionControls
+    var progress: ProgressView
     var game: Game
     var background: UIImageView
     var displayTimer: Timer?
@@ -22,13 +23,15 @@ class GameController: UIViewController {
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         game = Game()
+        controls = MotionControls()
+        progress = ProgressView()
         actionView = GameView(frame: CGRect(x:0,y:0,width:0,height:0), enemies: game.currentEnemies, projectiles: [])
         actionView.game = self.game
-        //player = TravelingObject(pX: 0, pY: 0, vX: 0, vY: 0)
-        game.level = 3
-        controls = MotionControls()
+        game.level = 1
         gameLoop = Thread()
-        gameMaxX = 0 // needed because bounds & frame cannot be accessed in the secondary thread
+        
+        // needed because bounds & frame cannot be accessed in the secondary thread
+        gameMaxX = 0
         gameMaxY = 0
         
         // set the background image
@@ -48,21 +51,24 @@ class GameController: UIViewController {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         gameLoop = Thread(block: updateGameState)
         
+        view.addSubview(progress)
         view.addSubview(background)
         background.addSubview(actionView)
         view.addSubview(controls)
+        
        
         setLayouts()
         
         setActionTargets()
     }
     
-    
+    /* sets up the actions taken by each of the game controller buttons */
     func setActionTargets() {
         controls.moveUp.addTarget(self, action: #selector(movePlayerUp), for: UIControlEvents.touchUpInside)
         controls.moveDown.addTarget(self, action: #selector(movePlayerDown), for: UIControlEvents.touchUpInside)
         controls.moveLeft.addTarget(self, action: #selector(movePlayerLeft), for: UIControlEvents.touchUpInside)
         controls.moveRight.addTarget(self, action: #selector(movePlayerRight), for: UIControlEvents.touchUpInside)
+        controls.fire.addTarget(self, action: #selector(firePie), for: UIControlEvents.touchUpInside)
     }
     
     @objc func movePlayerUp() {
@@ -88,20 +94,33 @@ class GameController: UIViewController {
             game.player.currentX += 10
         }
     }
+
+    /* adds a new pie to the game which moves straight up from the place the players postion during launch */
+    @objc func firePie() {
+        // add a traveling ob inst to game
+        let newProjectile = TravelingObject(pX: game.player.currentX, pY: game.player.currentY - 10, vX: 0, vY: 1000)
+        
+        game.currentProjectiles.append(newProjectile)
+        print("creating pie")
+
+    }
     
     
-    /* Wait until the view has loaded to being updating game state and display */
+    /* Wait until the view has loaded to being updating display */
     override func viewDidLoad() {
         displayTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1/60), target: self, selector: #selector(updateGameDisplay), userInfo: nil, repeats: true)
 
-        gameLoop.start()
     }
     
+    /* wait until subview are loaded to be able to center character and begin game logic */
     override func viewDidAppear(_ animated: Bool) {
         // center the player to initial position
         game.player.currentX = Double(gameMaxX) / 2 - Double(gameMaxX) / 10  // subtraction used to center
         game.player.currentY = Double(gameMaxY) - Double(gameMaxY) / 8
+        
+        gameLoop.start()
     }
+
     
     
     /* Updates the logic components of that represent the state of the game */
@@ -109,6 +128,8 @@ class GameController: UIViewController {
         var dtime: Date = Date()
         while(true){
             let timePassed: Double =  0.0 - dtime.timeIntervalSince(Date())
+            
+            // Use time passed to update enemies
             for e in game.currentEnemies {
                 // enemy has moved into the screen
                 if !e.active && e.currentX > 0 && e.currentX < Double(gameMaxX) && e.currentY > 0 && e.currentY < Double(gameMaxY) {
@@ -126,20 +147,70 @@ class GameController: UIViewController {
                 }
             }
             
-            if allEliminated() {
-                print("LEVEL IS OVER")
+            
+            // update projectiles
+            for (index, p) in game.currentProjectiles.enumerated() {
+                p.currentY = p.currentY - Double(p.vY) * timePassed
+                if (p.currentX < 0 - Double(gameMaxX / 5) || p.currentX > Double(gameMaxX)) || (p.currentY < 0 - Double(gameMaxY / 9)  || p.currentY > Double(gameMaxY)) {
+                    game.currentProjectiles.remove(at: index)
+                }
             }
             
             // update time to now
             dtime = Date()
             
-            if game.level == 1000 {
-                Thread.exit()
+            // check for collisions
+            // collisions only have an effect between enemies and other items
+            for e in game.currentEnemies {
+                // check against projectiles
+                
+                // check agains player
+                if !e.eliminated && areOverlapping(obj1: e, obj2: game.player) {
+                    print("reduce lives")
+                    // remove enemy
+                    e.eliminated = true
+                    // reduce life count
+                }
+                
+                // check for projectile hits
+                for p in game.currentProjectiles {
+                    if !e.eliminated && areOverlapping(obj1: e, obj2: p) {
+                        print("clown slammed!")
+                        e.eliminated = true
+                        p.eliminated = true
+                    }
+                }
             }
             
             
+            if game.level == 1000 {
+                Thread.exit()
+            }
+            if allEliminated() {
+               // print("LEVEL IS OVER")
+            }
         }
+        
     }
+    
+    
+    
+    /* determined if two objects have collided */
+    func areOverlapping(obj1: TravelingObject, obj2: TravelingObject) -> Bool {
+        if obj2.currentX + Double(gameMaxX) / 6 > obj1.currentX && obj2.currentX + Double(gameMaxX) / 6 < obj1.currentX + Double(gameMaxX) / 6 &&
+            obj2.currentY > obj1.currentY && obj2.currentY < obj1.currentY + Double(gameMaxY) / 21 {
+            return true
+        }
+
+       if obj2.currentX > obj1.currentX && obj2.currentX  < obj1.currentX + Double(gameMaxX) / 12 &&
+            obj2.currentY > obj1.currentY && obj2.currentY < obj1.currentY + Double(gameMaxY) / 21 {
+            return true
+        }
+        
+       
+        return false
+    }
+    
     
     func allEliminated() -> Bool {
         for e in game.currentEnemies {
@@ -159,7 +230,6 @@ class GameController: UIViewController {
         // calls layout of "moving" views
         actionView.setNeedsLayout()
         if game.currentEnemies.count == 0 {
-            print("LEVEL IS OVER")
         }
     }
     
@@ -170,12 +240,14 @@ class GameController: UIViewController {
         controls.translatesAutoresizingMaskIntoConstraints = false
         background.translatesAutoresizingMaskIntoConstraints = false
         actionView.translatesAutoresizingMaskIntoConstraints = false
+        progress.translatesAutoresizingMaskIntoConstraints = false
         
-        let views:[String : UIView] = ["controls": controls, "bg": background, "action": actionView]
-        
+        let views:[String : UIView] = ["controls": controls, "bg": background, "action": actionView, "progress": progress]
+        view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[progress][bg][controls]|", options: [], metrics: nil, views: views))
         view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[controls]|", options: [], metrics: nil, views: views))
         view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[bg]|", options: [], metrics: nil, views: views))
-        view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[bg][controls]|", options: [], metrics: nil, views: views))
+        view.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[progress]|", options: [], metrics: nil, views: views))
+        
         
         // sets the layout of the actionview to entirely overlap the image view
         background.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[action]|", options: [], metrics: nil, views: views))
@@ -194,16 +266,17 @@ class GameController: UIViewController {
 class GameView: UIView {
     var enemyViews: [UIImageView]
     var player: UIImageView
-    var projectiles: [UIImageView]
+    var projectileViews: [UIImageView]
     var game: Game
     
 
     init(frame: CGRect, enemies:[TravelingObject], projectiles: [TravelingObject]) {
         self.enemyViews = []
-        self.projectiles = []
+        self.projectileViews = []
         player = UIImageView()
         game = Game()
         super.init(frame: frame)
+        self.backgroundColor = UIColor(cgColor: UIColor.black.cgColor.copy(alpha: 0.6)!)
         
         for e in game.currentEnemies {
             // create a view with the clown for each enemy in the game
@@ -225,6 +298,8 @@ class GameView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    
+    /* renders the moving pieces of the game */
     override func layoutSubviews() {
         for (e, v) in zip(game.currentEnemies, enemyViews) {
             // override the frame with one indicating new position
@@ -232,18 +307,28 @@ class GameView: UIView {
                 let eFrame: CGRect = CGRect(x: CGFloat(e.currentX), y: CGFloat(e.currentY), width: bounds.maxX / 7, height: bounds.maxX / 8)
                 v.frame = eFrame
             }
+            else {
+                v.removeFromSuperview()
+            }
         }
         
-        /*for p in projectiles {
+        
+        // remove old projectile frames
+        for pv in projectileViews {
+            pv.removeFromSuperview()
+        }
+        
+        // place new projectile frames
+        for p in game.currentProjectiles {
             // create a view with the pie
-            let pView: UIImageView = UIImageView(frame: CGRect(x: CGFloat(p.currentX), y: CGFloat(p.currentY), width: bounds.maxX / 7, height: bounds.maxX / 8))
-            pView.image = UIImage(named: "images/pie.jpg")
+            let pView: UIImageView = UIImageView(frame: CGRect(x: CGFloat(p.currentX), y: CGFloat(p.currentY), width: bounds.maxX / 11, height: bounds.maxX / 10))
+            pView.image = UIImage(named: "images/pie.png")
+            projectileViews.append(pView)
             addSubview(pView)
-        }*/
+        }
         
         // render the player's character
         player.frame = CGRect(x: CGFloat(game.player.currentX), y: CGFloat(game.player.currentY), width: frame.maxX / 5, height: frame.maxY / 9)
-        
     }
 }
 
@@ -291,69 +376,7 @@ class TravelingObject: NSObject, Codable {
 }
 
 
-class MotionControls: UIView {
-    var moveLeft: UIButton = UIButton()
-    var moveRight: UIButton = UIButton()
-    var moveUp: UIButton = UIButton()
-    var moveDown: UIButton = UIButton()
-    var fire: UIButton = UIButton()
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        moveLeft.setTitle("left", for: UIControlState.normal)
-        moveRight.setTitle("right", for: UIControlState.normal)
-        moveUp.setTitle("up", for: UIControlState.normal)
-        moveDown.setTitle("down", for: UIControlState.normal)
-        fire.setTitle("fire", for: UIControlState.normal)
-        
-        moveLeft.setTitleColor(UIColor.cyan, for: UIControlState.normal)
-        moveRight.setTitleColor(UIColor.cyan, for: UIControlState.normal)
-        moveUp.setTitleColor(UIColor.cyan, for: UIControlState.normal)
-        moveDown.setTitleColor(UIColor.cyan, for: UIControlState.normal)
-        fire.setTitleColor(UIColor.orange, for: UIControlState.normal)
-        
-        moveLeft.backgroundColor = UIColor.black
-        moveRight.backgroundColor = UIColor.black
-        moveUp.backgroundColor = UIColor.black
-        moveDown.backgroundColor = UIColor.black
-        fire.backgroundColor = UIColor.black
-        
-        moveLeft.translatesAutoresizingMaskIntoConstraints = false
-        moveRight.translatesAutoresizingMaskIntoConstraints = false
-        moveUp.translatesAutoresizingMaskIntoConstraints = false
-        moveDown.translatesAutoresizingMaskIntoConstraints = false
-        fire.translatesAutoresizingMaskIntoConstraints = false
-        
-        addSubview(moveLeft)
-        addSubview(moveRight)
-        addSubview(moveUp)
-        addSubview(moveDown)
-        addSubview(fire)
-        
-        let views:[String : UIView] = ["moveLeft": moveLeft, "moveRight": moveRight, "moveUp": moveUp, "moveDown": moveDown, "fire": fire]
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[moveLeft][moveDown][fire][moveUp][moveRight]|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[moveLeft]|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[moveRight]|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[moveUp]|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[moveDown]|", options: [], metrics: nil, views: views))
-        addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[fire]|", options: [], metrics: nil, views: views))
-        
-        addConstraint(NSLayoutConstraint(item: moveLeft, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: moveDown, attribute: NSLayoutAttribute.height, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: moveDown, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: moveUp, attribute: NSLayoutAttribute.height, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: moveUp, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: moveRight, attribute: NSLayoutAttribute.height, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: moveUp, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: fire, attribute: NSLayoutAttribute.height, multiplier: 1, constant: 0.0))
-        
-        addConstraint(NSLayoutConstraint(item: moveLeft, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: moveDown, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: moveDown, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: moveUp, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: moveUp, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: moveRight, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-        addConstraint(NSLayoutConstraint(item: moveUp, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: fire, attribute: NSLayoutAttribute.width, multiplier: 1, constant: 0.0))
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-}
+
 
 // four image views hosrixzonatlly divided
 class LivesLeft: UIView {
