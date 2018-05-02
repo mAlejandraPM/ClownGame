@@ -20,14 +20,15 @@ class GameController: UIViewController {
     var actionView: GameView
     var gameMaxX: Int
     var gameMaxY: Int
+    var lastLevel: Int
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         game = Game()
+        lastLevel = game.level
         controls = MotionControls()
         progress = ProgressView()
         actionView = GameView(frame: CGRect(x:0,y:0,width:0,height:0), enemies: game.currentEnemies, projectiles: [])
         actionView.game = self.game
-        game.level = 1
         gameLoop = Thread()
         
         // needed because bounds & frame cannot be accessed in the secondary thread
@@ -98,7 +99,7 @@ class GameController: UIViewController {
     /* adds a new pie to the game which moves straight up from the place the players postion during launch */
     @objc func firePie() {
         // add a traveling ob inst to game
-        let newProjectile = TravelingObject(pX: game.player.currentX, pY: game.player.currentY - 10, vX: 0, vY: 1000)
+        let newProjectile = TravelingObject(pX: game.player.currentX + Double(gameMaxX / 20), pY: game.player.currentY - 10, vX: 0, vY: 700)
         
         game.currentProjectiles.append(newProjectile)
         print("creating pie")
@@ -166,44 +167,73 @@ class GameController: UIViewController {
                 
                 // check agains player
                 if !e.eliminated && areOverlapping(obj1: e, obj2: game.player) {
-                    print("reduce lives")
-                    // remove enemy
                     e.eliminated = true
-                    // reduce life count
+                    game.livesLeft -= 1
+                    
+                    if game.livesLeft == 0 {
+                        // game over
+                        break
+                    }
+                    
                 }
                 
                 // check for projectile hits
                 for p in game.currentProjectiles {
                     if !e.eliminated && areOverlapping(obj1: e, obj2: p) {
-                        print("clown slammed!")
                         e.eliminated = true
                         p.eliminated = true
+                        game.score += 5
                     }
                 }
             }
             
-            
-            if game.level == 1000 {
-                Thread.exit()
-            }
             if allEliminated() {
-               // print("LEVEL IS OVER")
+                // level complete, breaking without changing alive value
+                if game.level == 3 {
+                    // endgame
+                    break
+                    
+                }
+                else {
+                    // LEVEL UP
+                    game.currentProjectiles = []
+                    game.player.currentX = Double(gameMaxX) / 2 - Double(gameMaxX) / 10  // subtraction used to center
+                    game.player.currentY = Double(gameMaxY) - Double(gameMaxY) / 8
+                    game.level += 1
+                    if game.level == 2 {
+                        game.currentEnemies = Levels.level2Enemies
+                        print("Enemies have been switched")
+                    }
+                    
+                    if game.level == 3 {
+                        game.currentEnemies = Levels.level3Enemies
+                    }
+                }
             }
         }
-        
     }
     
+    
+    func gameOver() {
+        // either high score screen or main menu
+    }
+    
+    func levelComplete() {
+        print("LEVEL COMPLETE")
+    }
     
     
     /* determined if two objects have collided */
     func areOverlapping(obj1: TravelingObject, obj2: TravelingObject) -> Bool {
-        if obj2.currentX + Double(gameMaxX) / 6 > obj1.currentX && obj2.currentX + Double(gameMaxX) / 6 < obj1.currentX + Double(gameMaxX) / 6 &&
-            obj2.currentY > obj1.currentY && obj2.currentY < obj1.currentY + Double(gameMaxY) / 21 {
+        if obj2.currentX + Double(gameMaxX) / 10 > obj1.currentX && obj2.currentX + Double(gameMaxX) / 10 < obj1.currentX + Double(gameMaxX) / 10 &&
+            obj2.currentY > obj1.currentY && obj2.currentY < obj1.currentY + Double(gameMaxX) / 10 {
+            print("HIT 1")
             return true
         }
 
-       if obj2.currentX > obj1.currentX && obj2.currentX  < obj1.currentX + Double(gameMaxX) / 12 &&
-            obj2.currentY > obj1.currentY && obj2.currentY < obj1.currentY + Double(gameMaxY) / 21 {
+       if obj2.currentX > obj1.currentX && obj2.currentX  < obj1.currentX + Double(gameMaxX) / 10  &&
+            obj2.currentY > obj1.currentY && obj2.currentY < obj1.currentY + Double(gameMaxX) / 11 {
+            print("HIT 2")
             return true
         }
         
@@ -229,11 +259,36 @@ class GameController: UIViewController {
         
         // calls layout of "moving" views
         actionView.setNeedsLayout()
-        if game.currentEnemies.count == 0 {
+        
+        // update lives and scores
+        progress.lives.setLives(remaining: game.livesLeft)
+        progress.score.text = String(game.score)
+        
+        // player has leveled up
+        if lastLevel != game.level {
+            lastLevel = game.level
+            if game.level == 2 {
+                background.image = UIImage(named: "images/background2.jpg")
+            }
+            else {
+                background.image = UIImage(named: "images/background3.jpg")
+            }
+        }
+        
+        if gameLoop.isFinished {
+            displayTimer?.invalidate()
+            presentGameOver()
         }
     }
     
     
+    func presentGameOver(){
+        let gameOverController = UIAlertController(title: "Game Over", message: "Your total score is \(game.score)", preferredStyle: .alert)
+        // handles removal of game in stack after action is taken
+       
+        gameOverController.addAction(UIAlertAction(title: "Continue", style: UIAlertActionStyle.default, handler: {(alert: UIAlertAction) in (self.presentingViewController as! MainMenuController).returnFromGame(score: self.game.score) }))
+        present(gameOverController, animated: true, completion: nil)
+    }
     
     func setLayouts(){
         // sets the layouts of the three main components
@@ -253,9 +308,8 @@ class GameController: UIViewController {
         background.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "H:|[action]|", options: [], metrics: nil, views: views))
         background.addConstraints(NSLayoutConstraint.constraints(withVisualFormat: "V:|[action]|", options: [], metrics: nil, views: views))
         
-        view.addConstraint(NSLayoutConstraint(item: progress, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: background, attribute: NSLayoutAttribute.height, multiplier: 0.3, constant: 0.0))
+        view.addConstraint(NSLayoutConstraint(item: progress, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: background, attribute: NSLayoutAttribute.height, multiplier: 0.2, constant: 0.0))
         view.addConstraint(NSLayoutConstraint(item: controls, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: background, attribute: NSLayoutAttribute.height, multiplier: 0.1, constant: 0.0))
-        
     }
     
    
@@ -266,8 +320,11 @@ class GameController: UIViewController {
 }
 
 
+
+
 /* The view that contains all of the moving pieces of the game,
- the targets, the player's character, and the projectiles */
+ the targets, the player's character, and the projectiles
+ */
 class GameView: UIView {
     var enemyViews: [UIImageView]
     var player: UIImageView
@@ -306,14 +363,24 @@ class GameView: UIView {
     
     /* renders the moving pieces of the game */
     override func layoutSubviews() {
+        if enemyViews.count < game.currentEnemies.count {
+            for _ in 1 ... (game.currentEnemies.count - enemyViews.count) {
+                let eView: UIImageView = UIImageView()
+                eView.image = UIImage(named: "images/clown.png")
+                self.enemyViews.append(eView)
+                addSubview(eView)
+            }
+        }
         for (e, v) in zip(game.currentEnemies, enemyViews) {
             // override the frame with one indicating new position
             if !e.eliminated {
-                let eFrame: CGRect = CGRect(x: CGFloat(e.currentX), y: CGFloat(e.currentY), width: bounds.maxX / 7, height: bounds.maxX / 8)
+                let eFrame: CGRect = CGRect(x: CGFloat(e.currentX), y: CGFloat(e.currentY), width: bounds.maxX / 10, height: bounds.maxX / 11)
                 v.frame = eFrame
             }
             else {
-                v.removeFromSuperview()
+                // put the frame out of sight
+                let eFrame: CGRect = CGRect(x: -1, y: -1, width: 0, height: 0)
+                v.frame = eFrame
             }
         }
         
@@ -326,10 +393,12 @@ class GameView: UIView {
         // place new projectile frames
         for p in game.currentProjectiles {
             // create a view with the pie
-            let pView: UIImageView = UIImageView(frame: CGRect(x: CGFloat(p.currentX), y: CGFloat(p.currentY), width: bounds.maxX / 11, height: bounds.maxX / 10))
-            pView.image = UIImage(named: "images/pie.png")
-            projectileViews.append(pView)
-            addSubview(pView)
+            if !p.eliminated {
+                let pView: UIImageView = UIImageView(frame: CGRect(x: CGFloat(p.currentX), y: CGFloat(p.currentY), width: bounds.maxX / 13, height: bounds.maxX / 12))
+                pView.image = UIImage(named: "images/pie.png")
+                projectileViews.append(pView)
+                addSubview(pView)
+            }
         }
         
         // render the player's character
@@ -337,13 +406,19 @@ class GameView: UIView {
     }
 }
 
-/* Represents a the game state */
+
+
+
+/*
+ Represents a the game state
+ */
 class Game: NSObject, Codable {
     var level: Int
     var score: Int
     var currentEnemies: [TravelingObject]
     var currentProjectiles: [TravelingObject]
     var player: TravelingObject
+    var livesLeft: Int
  
     override init() {
         level = 1
@@ -351,13 +426,16 @@ class Game: NSObject, Codable {
         currentEnemies = Levels.level1Enemies
         player = TravelingObject(pX: 0, pY: 0, vX: 0 ,vY: 0)
         currentProjectiles = []
+        livesLeft = 4
         
         super.init()
     }
 }
 
 
-/* Represents object that can move in the game */
+/*
+ Represents object that can move in the game
+ */
 class TravelingObject: NSObject, Codable {
     var startX: Double
     var startY: Double
@@ -382,8 +460,3 @@ class TravelingObject: NSObject, Codable {
 
 
 
-
-// four image views hosrixzonatlly divided
-class LivesLeft: UIView {
-    
-}

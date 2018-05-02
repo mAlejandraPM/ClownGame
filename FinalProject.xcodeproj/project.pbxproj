@@ -16,6 +16,8 @@
 		C4846ADD20927C0E0063E924 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = C4846ADC20927C0E0063E924 /* Default-568h@2x.png */; };
 		C4846ADF2092A7F40063E924 /* Game.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4846ADE2092A7F40063E924 /* Game.swift */; };
 		C4846AE3209381BC0063E924 /* images in Resources */ = {isa = PBXBuildFile; fileRef = C4846AE2209381BC0063E924 /* images */; };
+		C4C9D48420995063007B2A19 /* HighScores.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C9D48320995063007B2A19 /* HighScores.swift */; };
+		C4C9D486209A2885007B2A19 /* OngoingGames.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4C9D485209A2885007B2A19 /* OngoingGames.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,8 @@
 		C4846ADC20927C0E0063E924 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		C4846ADE2092A7F40063E924 /* Game.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Game.swift; sourceTree = "<group>"; };
 		C4846AE2209381BC0063E924 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; path = images; sourceTree = "<group>"; };
+		C4C9D48320995063007B2A19 /* HighScores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighScores.swift; sourceTree = "<group>"; };
+		C4C9D485209A2885007B2A19 /* OngoingGames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OngoingGames.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,9 +73,11 @@
 				C4846AE2209381BC0063E924 /* images */,
 				C4846AD4209269900063E924 /* Info.plist */,
 				C4846ADA209271260063E924 /* MainMenu.swift */,
+				C4C9D48320995063007B2A19 /* HighScores.swift */,
 				C4433045209575D50074E506 /* Levels.swift */,
 				C4846ADE2092A7F40063E924 /* Game.swift */,
 				C41C575E20983B80009AFE8D /* GameContollerSubviews.swift */,
+				C4C9D485209A2885007B2A19 /* OngoingGames.swift */,
 			);
 			path = FinalProject;
 			sourceTree = "<group>";
@@ -150,6 +156,8 @@
 			files = (
 				C4433046209575D50074E506 /* Levels.swift in Sources */,
 				C4846ACB209269900063E924 /* ViewController.swift in Sources */,
+				C4C9D48420995063007B2A19 /* HighScores.swift in Sources */,
+				C4C9D486209A2885007B2A19 /* OngoingGames.swift in Sources */,
 				C4846ADB209271260063E924 /* MainMenu.swift in Sources */,
 				C4846AC9209269900063E924 /* AppDelegate.swift in Sources */,
 				C4846ADF2092A7F40063E924 /* Game.swift in Sources */,

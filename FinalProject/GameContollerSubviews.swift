@@ -84,7 +84,6 @@ class ProgressView: UIView {
     
     override init(frame: CGRect) {
         score = UILabel()
-        score.text = "1200"
         score.textColor = UIColor.yellow
         score.textAlignment = .center
         lives = LivesView()
@@ -165,16 +164,17 @@ class LivesView: UIView {
     
     func setLives(remaining: Int){
         if remaining < 1 {
-            life1.backgroundColor = UIColor(cgColor: UIColor.darkGray.cgColor.copy(alpha: 0.8)!)
+            life1.image = nil
         }
         if remaining < 2 {
-            life2.backgroundColor = UIColor(cgColor: UIColor.darkGray.cgColor.copy(alpha: 0.8)!)
+            life2.image = nil
         }
         if remaining < 3 {
-            life2.backgroundColor = UIColor(cgColor: UIColor.darkGray.cgColor.copy(alpha: 0.8)!)
+            life3.image = nil
         }
         if remaining < 4 {
-            life2.backgroundColor = UIColor(cgColor: UIColor.darkGray.cgColor.copy(alpha: 0.8)!)
+            life4.image = nil
+            life4.setNeedsDisplay()
         }
     }
 }

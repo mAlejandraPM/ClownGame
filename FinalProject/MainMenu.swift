@@ -10,9 +10,17 @@ import Foundation
 import UIKit
 
 class MainMenuController: UIViewController {
+    var newGameController: GameController
+    var highScoreController: HighScoresController
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        newGameController = GameController()
+        highScoreController = HighScoresController()
+        
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        highScoreController.hView.returnButton.addTarget(self, action: #selector(self.returnToMain), for: UIControlEvents.touchUpInside)
+        
         let gameName: UILabel = UILabel()
         let startButton: UIButton = UIButton()
         let resumeButton: UIButton = UIButton()
@@ -27,13 +35,75 @@ class MainMenuController: UIViewController {
         styleObjects(name: gameName, start: startButton, resume: resumeButton, highScores: highScoresButton)
     
         startButton.addTarget(self, action: #selector(makeNewGame), for: UIControlEvents.touchUpInside)
-            }
+        highScoresButton.addTarget(self, action: #selector(gotoHighScores), for: UIControlEvents.touchUpInside)
+    }
+    
     
     @objc func makeNewGame(){
         print("making a new game")
-        self.present(GameController(), animated: true, completion: nil)
+        newGameController = GameController()
+        self.present(newGameController, animated: false, completion: nil)
     }
     
+    
+    @objc func gotoHighScores(){
+        //highScoreController.hView.returnButton.addTarget(self, action: #selector(returnToMain), for: UIControlEvents.touchUpInside)
+        self.present(highScoreController, animated: false, completion: nil)
+    }
+    
+    /* dismisses the high score page, and the game screen if led there by finishing game */
+    @objc func returnToMain(){
+        for _ in childViewControllers {
+            print("returning...")
+            dismiss(animated: false, completion: nil)
+        }
+    }
+    
+    /*
+    takes user to high score page if warrented, else returns them to main menu */
+    func returnFromGame(score: Int){
+        let sortedTop5 = HighScoresController.top5.sorted {$0.score > $1.score}
+        if sortedTop5.count == 5 {
+            if score > sortedTop5[HighScoresController.top5.count - 1].score {
+                // push high score view with space for new name
+                print("pushing score")
+                for (index, t) in sortedTop5.enumerated() {
+                    if score > t.score {
+                        print("inserting at \(index)")
+                        highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + String(describing: Date()))
+                        break
+                    }
+                }
+                
+                dismiss(animated: false, completion: nil)
+                gotoHighScores()
+            }
+            else {
+                // returns user to the main menu
+                dismiss(animated: false, completion: nil)
+            }
+            
+        }
+        else {
+            if score > sortedTop5[HighScoresController.top5.count - 1].score {
+                for (index, t) in sortedTop5.enumerated() {
+                    if score > t.score {
+                        print("inserting at \(index)")
+                        highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + String(describing: Date()))
+                        break
+                    }
+                }
+            }
+            else {
+                highScoreController.hView.setNewScore(order: HighScoresController.top5.count + 1, score: String(score) + "      " + String(describing: Date()))
+            }
+            dismiss(animated: false, completion: nil)
+            gotoHighScores()
+        }
+    }
+        
+    
+
     
     func styleObjects(name: UILabel, start: UIButton, resume: UIButton, highScores: UIButton){
         // Format the game name
