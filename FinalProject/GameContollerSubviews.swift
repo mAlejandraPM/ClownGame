@@ -39,6 +39,12 @@ class MotionControls: UIView {
         moveDown.backgroundColor = UIColor.black
         fire.backgroundColor = UIColor.black
         
+        moveLeft.showsTouchWhenHighlighted = true
+        moveRight.showsTouchWhenHighlighted = true
+        moveUp.showsTouchWhenHighlighted = true
+        moveDown.showsTouchWhenHighlighted = true
+        fire.showsTouchWhenHighlighted = true
+        
         moveLeft.translatesAutoresizingMaskIntoConstraints = false
         moveRight.translatesAutoresizingMaskIntoConstraints = false
         moveUp.translatesAutoresizingMaskIntoConstraints = false

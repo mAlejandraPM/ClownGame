@@ -55,7 +55,6 @@ class MainMenuController: UIViewController {
     }
     
     @objc func makeNewGame(){
-    
         let newGame = Game()
         print("making new game \(newGame)")
         newGameController = GameController(nibName: nil, bundle: nil, theGame: newGame)
@@ -65,6 +64,8 @@ class MainMenuController: UIViewController {
     @objc func saveGame(){
         dismiss(animated: false, completion: nil)
         ongoingGameController.activeGames.insert(newGameController.game, at: 0)
+        let newGame = Game()
+        newGameController = GameController(nibName: nil, bundle: nil, theGame: newGame)
         
     }
     
@@ -88,7 +89,10 @@ class MainMenuController: UIViewController {
                 // push high score view with space for new name
                 for (index, t) in sortedTop5.enumerated() {
                     if score > t.score {
-                        highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + String(describing: Date()))
+                        let formatter: DateFormatter = DateFormatter()
+                        formatter.dateFormat = "MM/dd/yyyy"
+                        let dateString = formatter.string(from: Date())
+                        highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + dateString)
                         break
                     }
                 }
@@ -103,7 +107,7 @@ class MainMenuController: UIViewController {
             
         }
         else {
-            if score > sortedTop5[HighScoresController.top5.count - 1].score {
+            if HighScoresController.top5.count > 0 &&  score > sortedTop5[HighScoresController.top5.count - 1].score {
                 for (index, t) in sortedTop5.enumerated() {
                     if score > t.score {
                         highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + String(describing: Date()))

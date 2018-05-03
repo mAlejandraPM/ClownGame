@@ -21,6 +21,11 @@ class GameController: UIViewController {
     var gameMaxX: Int
     var gameMaxY: Int
     var lastLevel: Int
+    var firingTimer: Timer?
+    var moveLeftTimer: Timer?
+    var moveRightTimer: Timer?
+    var moveUpTimer: Timer?
+    var moveDownTimer: Timer?
     
      init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?, theGame: Game ) {
         print("making new controller")
@@ -66,11 +71,23 @@ class GameController: UIViewController {
     
     /* sets up the actions taken by each of the game controller buttons */
     func setActionTargets() {
-        controls.moveUp.addTarget(self, action: #selector(movePlayerUp), for: UIControlEvents.touchUpInside)
-        controls.moveDown.addTarget(self, action: #selector(movePlayerDown), for: UIControlEvents.touchUpInside)
-        controls.moveLeft.addTarget(self, action: #selector(movePlayerLeft), for: UIControlEvents.touchUpInside)
-        controls.moveRight.addTarget(self, action: #selector(movePlayerRight), for: UIControlEvents.touchUpInside)
-        controls.fire.addTarget(self, action: #selector(firePie), for: UIControlEvents.touchUpInside)
+        controls.moveUp.addTarget(self, action: #selector(movePlayerUp), for: UIControlEvents.touchDown)
+        controls.moveDown.addTarget(self, action: #selector(movePlayerDown), for: UIControlEvents.touchDown)
+        controls.moveLeft.addTarget(self, action: #selector(movePlayerLeft), for: UIControlEvents.touchDown)
+        controls.moveRight.addTarget(self, action: #selector(movePlayerRight), for: UIControlEvents.touchDown)
+        controls.fire.addTarget(self, action: #selector(firePie), for: UIControlEvents.touchDown)
+        
+        let longPresssFire = UILongPressGestureRecognizer(target: self, action: #selector(longFire))
+        let longPressRight = UILongPressGestureRecognizer(target: self, action: #selector(longRight))
+        let longPressLeft = UILongPressGestureRecognizer(target: self, action: #selector(longLeft))
+        let longPressUp = UILongPressGestureRecognizer(target: self, action: #selector(longUp))
+        let longPressDown = UILongPressGestureRecognizer(target: self, action: #selector(longDown))
+
+        controls.fire.addGestureRecognizer(longPresssFire)
+        controls.moveRight.addGestureRecognizer(longPressRight)
+        controls.moveLeft.addGestureRecognizer(longPressLeft)
+        controls.moveUp.addGestureRecognizer(longPressUp)
+        controls.moveDown.addGestureRecognizer(longPressDown)
     }
     
     @objc func movePlayerUp() {
@@ -78,24 +95,69 @@ class GameController: UIViewController {
             game.player.currentY -= 10
         }
     }
+    @objc func longUp(sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+            moveUpTimer = Timer.scheduledTimer(timeInterval: TimeInterval(0.1), target: self, selector: #selector(movePlayerUp), userInfo: nil, repeats: true)
+        }
+        
+        if sender.state == .ended {
+            moveUpTimer?.invalidate()
+            moveUpTimer = nil
+        }
+    }
+    
     
     @objc func movePlayerDown() {
         if game.player.currentY < Double(background.frame.maxY - background.frame.maxY / 9) {
             game.player.currentY += 10
         }
     }
+    @objc func longDown(sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+            moveDownTimer = Timer.scheduledTimer(timeInterval: TimeInterval(0.1), target: self, selector: #selector(movePlayerDown), userInfo: nil, repeats: true)
+        }
+        
+        if sender.state == .ended {
+            moveDownTimer?.invalidate()
+            moveDownTimer = nil
+        }
+    }
+    
     
     @objc func movePlayerLeft() {
         if game.player.currentX > 0 {
             game.player.currentX -= 10
         }
     }
+    @objc func longLeft(sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+            moveLeftTimer = Timer.scheduledTimer(timeInterval: TimeInterval(0.1), target: self, selector: #selector(movePlayerLeft), userInfo: nil, repeats: true)
+        }
+        
+        if sender.state == .ended {
+            moveLeftTimer?.invalidate()
+            moveLeftTimer = nil
+        }
+    }
+
+    
     
     @objc func movePlayerRight() {
         if game.player.currentX < Double(background.frame.maxX - background.frame.maxX / 5) {
             game.player.currentX += 10
         }
     }
+    @objc func longRight(sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+            moveRightTimer = Timer.scheduledTimer(timeInterval: TimeInterval(0.1), target: self, selector: #selector(movePlayerRight), userInfo: nil, repeats: true)
+        }
+        
+        if sender.state == .ended {
+            moveRightTimer?.invalidate()
+            moveRightTimer = nil
+        }
+    }
+    
 
     /* adds a new pie to the game which moves straight up from the place the players postion during launch */
     @objc func firePie() {
@@ -103,7 +165,18 @@ class GameController: UIViewController {
         let newProjectile = TravelingObject(pX: game.player.currentX + Double(gameMaxX / 20), pY: game.player.currentY - 10, vX: 0, vY: 700)
         
         game.currentProjectiles.append(newProjectile)
-
+    }
+    
+    @objc func longFire(sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+           firingTimer = Timer.scheduledTimer(timeInterval: TimeInterval(0.65), target: self, selector: #selector(firePie), userInfo: nil, repeats: true)
+        }
+        
+        if sender.state == .ended {
+            print("ended")
+            firingTimer?.invalidate()
+            firingTimer = nil
+        }
     }
     
     
@@ -168,15 +241,19 @@ class GameController: UIViewController {
             // check for collisions
             // collisions only have an effect between enemies and other items
             for e in game.currentEnemies {
-                // check against projectiles
+                if e.eliminated {
+                    print("eliminated")
+                }
                 
                 // check agains player
                 if !e.eliminated && areOverlapping(obj1: e, obj2: game.player) {
                     e.eliminated = true
                     game.livesLeft -= 1
+                    print(game.livesLeft)
                     
-                    if game.livesLeft == 0 {
+                    if game.livesLeft <= 0 {
                         // game over
+                        Thread.exit()
                         break
                     }
                     
@@ -202,6 +279,7 @@ class GameController: UIViewController {
                 }
                 else {
                     // LEVEL UP
+                    print("level up")
                     game.currentProjectiles = []
                     game.player.currentX = Double(gameMaxX) / 2 - Double(gameMaxX) / 10  // subtraction used to center
                     game.player.currentY = Double(gameMaxY) - Double(gameMaxY) / 8
@@ -415,7 +493,6 @@ class GameView: UIView {
         
         // render the player's character
         player.frame = CGRect(x: CGFloat(game.player.currentX), y: CGFloat(game.player.currentY), width: frame.maxX / 5, height: frame.maxY / 9)
-        print(game)
     }
 }
 
@@ -425,7 +502,8 @@ class GameView: UIView {
 /*
  Represents a the game state
  */
-class Game: NSObject, Codable {
+class Game: NSObject, NSCoding {
+    
     var level: Int
     var score: Int
     var currentEnemies: [TravelingObject]
@@ -443,13 +521,33 @@ class Game: NSObject, Codable {
         
         super.init()
     }
+    
+    func encode(with aCoder: NSCoder) {
+        aCoder.encode(level, forKey: "level")
+        aCoder.encode(score, forKey: "score")
+        aCoder.encode(currentEnemies, forKey: "currentEnemies")
+        aCoder.encode(currentProjectiles, forKey: "currentProjectiles")
+        aCoder.encode(player, forKey: "player")
+        aCoder.encode(livesLeft, forKey: "livesLeft")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        level = Int(aDecoder.decodeInt32(forKey: "level"))
+        score = Int(aDecoder.decodeInt32(forKey: "score"))
+        currentEnemies = aDecoder.decodeObject(forKey: "currentEnemies") as! [TravelingObject]
+        currentProjectiles = aDecoder.decodeObject(forKey: "currentProjectiles") as! [TravelingObject]
+        player =  aDecoder.decodeObject(forKey: "player") as! TravelingObject
+        livesLeft = Int(aDecoder.decodeInt32(forKey: "livesLeft"))
+    }
+    
 }
 
 
 /*
  Represents object that can move in the game
  */
-class TravelingObject: NSObject, Codable {
+class TravelingObject: NSObject, NSCoding {
+
     var startX: Double
     var startY: Double
     var vX: Int
@@ -469,6 +567,29 @@ class TravelingObject: NSObject, Codable {
         active = false
         eliminated = false
     }
+    
+    func encode(with aCoder: NSCoder) {
+        aCoder.encode(startX, forKey: "startX")
+        aCoder.encode(startY, forKey: "startY")
+        aCoder.encode(vX, forKey: "vX")
+        aCoder.encode(vY, forKey: "vY")
+        aCoder.encode(currentX, forKey: "currentX")
+        aCoder.encode(currentY, forKey: "currentY")
+        aCoder.encode(active, forKey: "active")
+        aCoder.encode(eliminated, forKey: "eliminated")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        startX = aDecoder.decodeDouble(forKey: "startX")
+        startY = aDecoder.decodeDouble(forKey: "startY")
+        vX = Int(aDecoder.decodeInt32(forKey: "vX"))
+        vY = Int(aDecoder.decodeInt32(forKey: "vY"))
+        currentX = aDecoder.decodeDouble(forKey: "currentX")
+        currentY = aDecoder.decodeDouble(forKey: "currentY")
+        active = aDecoder.decodeBool(forKey: "active")
+        eliminated = aDecoder.decodeBool(forKey: "eliminated")        
+    }
+    
 }
 
 

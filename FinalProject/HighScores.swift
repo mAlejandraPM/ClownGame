@@ -11,7 +11,7 @@ import UIKit
 
 class HighScoresController: UIViewController{
     // have global of the mainteined top 5 scores in sorter ord
-    static var top5: [(score: Int, date: Date?)] = [(5, nil),(2, nil),(4, nil)]
+    static var top5: [(score: Int, date: String)] = []
     
     var hView: HighScoresView
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -21,12 +21,15 @@ class HighScoresController: UIViewController{
         // load last saved scores from file
         
         view = hView
+        
+        
         let  sortedTop5 = HighScoresController.top5.sorted {$0.score > $1.score}
         var index: Int = 1
         for t in sortedTop5 {
             scoreView.setScore(order: index, score: String(t.score) + "      " + String(describing: t.date))
             index += 1
         }
+        
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -175,6 +178,8 @@ class HighScoresView: UIView {
         }
         
     }
+    
+
     
     
     required init?(coder aDecoder: NSCoder) {

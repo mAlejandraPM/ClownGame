@@ -22,6 +22,8 @@ class GameCollectionController: UITableViewController {
         tableView.sectionIndexTrackingBackgroundColor = UIColor.black
         tableView.backgroundColor = UIColor.black
         tableView.separatorColor = UIColor.red
+        loadGames()
+   
     }
     
     
@@ -60,38 +62,27 @@ class GameCollectionController: UITableViewController {
 
     
     func saveData(){
-        /*print("saving data")
+        print("saving data")
         let docPath: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let activeGameFilePath: String = docPath + "/activeGames.txt"
+        let activeGameFilePath: String = docPath + "/games.txt"
         NSKeyedArchiver.archiveRootObject(activeGames, toFile: activeGameFilePath)
         
-        let completedGameFilePath: String = docPath + "/completedGames.txt"
-        NSKeyedArchiver.archiveRootObject(completedGames, toFile: completedGameFilePath)*/
     }
     
-    func loadData(){
-        /*print("loading data")
+    func loadGames(){
+        print("loading data")
         let docPath: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let activeGameFilePath: String = docPath + "/activeGames.txt"
-        let completedGameFilePath: String = docPath + "/completedGames.txt"
+        let filepath: String = docPath + "/games.txt"
         let fm: FileManager = FileManager()
-        if(fm.fileExists(atPath: activeGameFilePath)){
-            activeGames =  NSKeyedUnarchiver.unarchiveObject(withFile: activeGameFilePath) as! [GameController]
-            for g in activeGames {
-                g.endButton.addTarget(self, action: #selector(GameCollectionTableViewController.moveToCompleted), for: UIControlEvents.touchDown)
-            }
+        
+        if(fm.fileExists(atPath: filepath)){
+            print("getting file")
+            activeGames =  NSKeyedUnarchiver.unarchiveObject(withFile: filepath) as! [Game]
         }
         else {
             activeGames = []
         }
-        
-        
-        if(fm.fileExists(atPath: completedGameFilePath)){
-            completedGames =  NSKeyedUnarchiver.unarchiveObject(withFile: completedGameFilePath) as! [GameController]
-        }
-        else {
-            completedGames = []
-        }*/
+       
     }
     
     
