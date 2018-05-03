@@ -22,8 +22,9 @@ class GameController: UIViewController {
     var gameMaxY: Int
     var lastLevel: Int
     
-    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        game = Game()
+     init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?, theGame: Game ) {
+        print("making new controller")
+        game = theGame
         lastLevel = game.level
         controls = MotionControls()
         progress = ProgressView()
@@ -102,23 +103,24 @@ class GameController: UIViewController {
         let newProjectile = TravelingObject(pX: game.player.currentX + Double(gameMaxX / 20), pY: game.player.currentY - 10, vX: 0, vY: 700)
         
         game.currentProjectiles.append(newProjectile)
-        print("creating pie")
 
     }
     
     
     /* Wait until the view has loaded to being updating display */
     override func viewDidLoad() {
-        displayTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1/60), target: self, selector: #selector(updateGameDisplay), userInfo: nil, repeats: true)
-
+    /*    displayTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1/60), target: self, selector: #selector(updateGameDisplay), userInfo: nil, repeats: true)
+        print("starting the display loop")*/
     }
     
     /* wait until subview are loaded to be able to center character and begin game logic */
     override func viewDidAppear(_ animated: Bool) {
         // center the player to initial position
-        game.player.currentX = Double(gameMaxX) / 2 - Double(gameMaxX) / 10  // subtraction used to center
-        game.player.currentY = Double(gameMaxY) - Double(gameMaxY) / 8
+        displayTimer = Timer.scheduledTimer(timeInterval: TimeInterval(1/60), target: self, selector: #selector(updateGameDisplay), userInfo: nil, repeats: true)
         
+        game.player.currentX = Double(UIScreen.main.bounds.maxX) / 2.2
+        game.player.currentY = Double(UIScreen.main.bounds.maxX) / 1.01
+  
         gameLoop.start()
     }
 
@@ -128,6 +130,11 @@ class GameController: UIViewController {
     func updateGameState(){
         var dtime: Date = Date()
         while(true){
+            
+            if gameLoop.isCancelled {
+                print("cancelling game loop")
+                break
+            }
             let timePassed: Double =  0.0 - dtime.timeIntervalSince(Date())
             
             // Use time passed to update enemies
@@ -135,7 +142,6 @@ class GameController: UIViewController {
                 // enemy has moved into the screen
                 if !e.active && e.currentX > 0 && e.currentX < Double(gameMaxX) && e.currentY > 0 && e.currentY < Double(gameMaxY) {
                     e.active = true
-                    print("Activating enemy")
                 }
                 
                 e.currentX = e.currentX + Double(e.vX) * timePassed
@@ -144,7 +150,6 @@ class GameController: UIViewController {
                 // enemy has moved through the screen
                 if e.active &&  !e.eliminated && ((e.currentX < 0 - Double(gameMaxX / 5) || e.currentX > Double(gameMaxX)) || (e.currentY < 0 - Double(gameMaxY / 9)  || e.currentY > Double(gameMaxY))) {
                     e.eliminated = true
-                    print("Removing enemy")
                 }
             }
             
@@ -191,6 +196,7 @@ class GameController: UIViewController {
                 // level complete, breaking without changing alive value
                 if game.level == 3 {
                     // endgame
+                    print("GAME DONE")
                     break
                     
                 }
@@ -202,7 +208,6 @@ class GameController: UIViewController {
                     game.level += 1
                     if game.level == 2 {
                         game.currentEnemies = Levels.level2Enemies
-                        print("Enemies have been switched")
                     }
                     
                     if game.level == 3 {
@@ -282,10 +287,18 @@ class GameController: UIViewController {
     }
     
     
+    @objc func saveGame(){
+        if let pvc = presentingViewController {
+            gameLoop.cancel()
+            displayTimer?.invalidate()
+            UIApplication.shared.sendAction(#selector((pvc as! MainMenuController).saveGame), to: pvc, from: self, for: nil)
+        }
+        
+    }
+    
+    
     func presentGameOver(){
-        let gameOverController = UIAlertController(title: "Game Over", message: "Your total score is \(game.score)", preferredStyle: .alert)
-        // handles removal of game in stack after action is taken
-       
+        let gameOverController = UIAlertController(title: "Game Over", message: "Your total score is \(game.score)", preferredStyle: .alert)       
         gameOverController.addAction(UIAlertAction(title: "Continue", style: UIAlertActionStyle.default, handler: {(alert: UIAlertAction) in (self.presentingViewController as! MainMenuController).returnFromGame(score: self.game.score) }))
         present(gameOverController, animated: true, completion: nil)
     }
@@ -343,7 +356,6 @@ class GameView: UIView {
         for e in game.currentEnemies {
             // create a view with the clown for each enemy in the game
             let eView: UIImageView = UIImageView()
-            print("\(e.currentY, e.currentX)")
             eView.image = UIImage(named: "images/clown.png")
             self.enemyViews.append(eView)
             addSubview(eView)
@@ -362,7 +374,7 @@ class GameView: UIView {
     
     
     /* renders the moving pieces of the game */
-    override func layoutSubviews() {
+    override func layoutSubviews(){
         if enemyViews.count < game.currentEnemies.count {
             for _ in 1 ... (game.currentEnemies.count - enemyViews.count) {
                 let eView: UIImageView = UIImageView()
@@ -403,6 +415,7 @@ class GameView: UIView {
         
         // render the player's character
         player.frame = CGRect(x: CGFloat(game.player.currentX), y: CGFloat(game.player.currentY), width: frame.maxX / 5, height: frame.maxY / 9)
+        print(game)
     }
 }
 

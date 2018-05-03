@@ -12,6 +12,7 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    var mainController: MainMenuController?
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
@@ -19,8 +20,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         window = UIWindow()
         
-        let mainMenu = MainMenuController()
-        window?.rootViewController = mainMenu
+        mainController = MainMenuController()
+        window?.rootViewController = mainController
         window?.makeKeyAndVisible()
         
         return true
@@ -39,7 +40,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         //save all ongoing games
         // save high scores
         
-        //UIApplication.shared.sendAction(#selector(saveGame), to: GameController, from: self, for: nil)
+        if let c = mainController {
+            /*if c.isBeingPresented{
+                c.dismiss(animated: true, completion: nil)
+                print("true")
+            }
+            else{*/
+                UIApplication.shared.sendAction(#selector(GameController.saveGame), to: c.newGameController, from: self, for: nil)
+            //}
+            c.dismiss(animated: false, completion: nil)
+        }
+        
+        
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {

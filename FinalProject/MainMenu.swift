@@ -12,14 +12,16 @@ import UIKit
 class MainMenuController: UIViewController {
     var newGameController: GameController
     var highScoreController: HighScoresController
+    var ongoingGameController: GameCollectionController
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
-        newGameController = GameController()
+        newGameController = GameController(nibName: nil, bundle: nil, theGame: Game())
         highScoreController = HighScoresController()
+        ongoingGameController = GameCollectionController(style: UITableViewStyle.plain)
         
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        
-        highScoreController.hView.returnButton.addTarget(self, action: #selector(self.returnToMain), for: UIControlEvents.touchUpInside)
+        ongoingGameController.mainController = self
+        highScoreController.hView.returnButton.addTarget(self, action: #selector(MainMenuController.returnToMain), for: UIControlEvents.touchUpInside)
         
         let gameName: UILabel = UILabel()
         let startButton: UIButton = UIButton()
@@ -36,28 +38,46 @@ class MainMenuController: UIViewController {
     
         startButton.addTarget(self, action: #selector(makeNewGame), for: UIControlEvents.touchUpInside)
         highScoresButton.addTarget(self, action: #selector(gotoHighScores), for: UIControlEvents.touchUpInside)
+        resumeButton.addTarget(self, action: #selector(showOngoingGames), for:  UIControlEvents.touchUpInside)
+    }
+    
+    // remove ongoing game controller and push game
+    @objc func pushGameController(){
+        let resumedGame = GameController(nibName: nil, bundle: nil, theGame:  ongoingGameController.pushedGame)
+        newGameController = resumedGame
+        dismiss(animated: false, completion: nil)
+        self.present(resumedGame, animated: false, completion: nil)
     }
     
     
+    @objc func showOngoingGames(){
+        self.present(ongoingGameController, animated: false, completion: nil)
+    }
+    
     @objc func makeNewGame(){
-        print("making a new game")
-        newGameController = GameController()
+    
+        let newGame = Game()
+        print("making new game \(newGame)")
+        newGameController = GameController(nibName: nil, bundle: nil, theGame: newGame)
         self.present(newGameController, animated: false, completion: nil)
+    }
+    
+    @objc func saveGame(){
+        dismiss(animated: false, completion: nil)
+        ongoingGameController.activeGames.insert(newGameController.game, at: 0)
+        
     }
     
     
     @objc func gotoHighScores(){
-        //highScoreController.hView.returnButton.addTarget(self, action: #selector(returnToMain), for: UIControlEvents.touchUpInside)
         self.present(highScoreController, animated: false, completion: nil)
     }
     
     /* dismisses the high score page, and the game screen if led there by finishing game */
     @objc func returnToMain(){
-        for _ in childViewControllers {
-            print("returning...")
-            dismiss(animated: false, completion: nil)
-        }
+        dismiss(animated: false, completion: nil)
     }
+    
     
     /*
     takes user to high score page if warrented, else returns them to main menu */
@@ -66,10 +86,8 @@ class MainMenuController: UIViewController {
         if sortedTop5.count == 5 {
             if score > sortedTop5[HighScoresController.top5.count - 1].score {
                 // push high score view with space for new name
-                print("pushing score")
                 for (index, t) in sortedTop5.enumerated() {
                     if score > t.score {
-                        print("inserting at \(index)")
                         highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + String(describing: Date()))
                         break
                     }
@@ -88,7 +106,6 @@ class MainMenuController: UIViewController {
             if score > sortedTop5[HighScoresController.top5.count - 1].score {
                 for (index, t) in sortedTop5.enumerated() {
                     if score > t.score {
-                        print("inserting at \(index)")
                         highScoreController.hView.setNewScore(order: index + 1, score: String(score) + "      " + String(describing: Date()))
                         break
                     }
